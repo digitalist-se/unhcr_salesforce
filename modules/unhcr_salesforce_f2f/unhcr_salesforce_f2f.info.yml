@@ -1,0 +1,7 @@
+name: UNHCR Salesforce (Face 2 Face)
+description: Provides customizations for the the UNHCR face 2 face app. Should only be installed on Face 2 Face.
+core: 8.x
+package: UNHCR - Salesforce
+type: module
+dependencies:
+  - unhcr_salesforce:unhcr_salesforce

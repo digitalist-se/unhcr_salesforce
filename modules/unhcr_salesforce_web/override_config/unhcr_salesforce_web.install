@@ -1,0 +1,30 @@
+<?php
+
+/**
+ * @file
+ * Install hooks for Salesforce integration.
+ */
+
+use Drupal\Component\Serialization\Yaml;
+
+/**
+ * Implements hook_install().
+ */
+function unhcr_salesforce_web_install() {
+  // Replace these configs.  We're using code to do this, as they are already
+  // installed.
+  $config_files = [
+    'core.entity_form_display.commerce_product.unhcr_honorial_donations.default',
+    'core.entity_form_display.commerce_product.unhcr_monthly_product_type.default',
+    'field.field.commerce_product.unhcr_honorial_donations.field_charity_campaign',
+    'field.field.commerce_product.unhcr_monthly_product_type.field_charity_campaign',
+    'field.storage.commerce_product.field_charity_campaign',
+  ];
+
+  foreach ($config_files as $config_id) {
+    $raw_data = file_get_contents(drupal_get_path('module', 'unhcr_salesforce_web') . '/override_config/' . $config_id . '.yml');
+    \Drupal::configFactory()->getEditable($config_id)
+      ->setData(Yaml::decode($raw_data))
+      ->save();
+  }
+}

@@ -1,0 +1,9 @@
+name: UNHCR Salesforce
+description: Provides integration for Salesforce and Give Clarity.
+core: 8.x
+package: UNHCR - Salesforce
+type: module
+dependencies:
+  - salesforce:salesforce
+  - salesforce:salesforce_jwt
+  - salesforce:salesforce_pull

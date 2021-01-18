@@ -1,0 +1,25 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function unhcr_salesforce_f2f_install() {
+  $definition = \Drupal::service('entity_field.manager')->getFieldStorageDefinitions('unhcr_form_submission')['campaign'];
+  \Drupal::service('field_storage_definition.listener')->onFieldStorageDefinitionCreate($definition);
+  $definition = \Drupal::service('entity_field.manager')->getFieldStorageDefinitions('unhcr_form_submission')['recruiter'];
+  \Drupal::service('field_storage_definition.listener')->onFieldStorageDefinitionCreate($definition);
+  $definition = \Drupal::service('entity_field.manager')->getFieldStorageDefinitions('unhcr_form_submission')['recruiter_id'];
+  \Drupal::service('field_storage_definition.listener')->onFieldStorageDefinitionCreate($definition);
+}
+
+/**
+ * <Describe here what your update function does>
+ */
+function unhcr_salesforce_f2f_update_8002() {
+  $definition = \Drupal::service('entity_field.manager')->getFieldStorageDefinitions('unhcr_form_submission')['campaign'];
+  \Drupal::service('field_storage_definition.listener')->onFieldStorageDefinitionCreate($definition);
+  $definition = \Drupal::service('entity_field.manager')->getFieldStorageDefinitions('unhcr_form_submission')['recruiter'];
+  \Drupal::service('field_storage_definition.listener')->onFieldStorageDefinitionCreate($definition);
+  $definition = \Drupal::service('entity_field.manager')->getFieldStorageDefinitions('unhcr_form_submission')['recruiter_id'];
+  \Drupal::service('field_storage_definition.listener')->onFieldStorageDefinitionCreate($definition);
+}

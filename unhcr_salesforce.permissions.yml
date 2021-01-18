@@ -1,0 +1,3 @@
+administer unhcr_salesforce settings:
+  title: 'Administer UNHCR Salesforce settings'
+  restrict access: true

@@ -1,0 +1,5 @@
+services:
+  unhcr_salesforce_f2f.submission_subscriber:
+    class: Drupal\unhcr_salesforce_f2f\EventSubscriber\SalesforceSubmissionSubscriber
+    tags:
+      - { name: event_subscriber }

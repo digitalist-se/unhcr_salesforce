@@ -1,0 +1,26 @@
+<?php
+
+/**
+ * @file
+ * Hooks and alters for the Salesforce integration.
+ */
+
+/**
+ * Display a set of Salesforce Campaigns on the field forms.
+ *
+ * @return array
+ *   Array of options for displaying the campaings.
+ */
+function unhcr_salesforce_campaign_options() {
+  return \Drupal::service('unhcr_salesforce.client')->getCampaignOptions();
+}
+
+/**
+ * Display a set of Salesforce Recruiters on the field forms.
+ *
+ * @return array
+ *   Array of options for displaying the recruiters.
+ */
+function unhcr_salesforce_recruiter_options() {
+  return \Drupal::service('unhcr_salesforce.client')->getRecruiterOptions();
+}

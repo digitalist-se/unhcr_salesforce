@@ -1,0 +1,5 @@
+unhcr_salesforce.unhcr_settings:
+  route_name: unhcr_salesforce.settings
+  parent: system.admin_config_services
+  title: UNHCR Salesforce Settings
+  description: 'UNHCR Salesforce Settings.'

@@ -1,0 +1,14 @@
+<?php
+
+/**
+ * @file
+ * Install hooks and updates for the charity -> salesforce transition.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function unhcr_salesforce_charity_install() {
+  // Ensure the module runs last so all previous settings can be overriden.
+  module_set_weight('unhcr_salesforce_charity', 999);
+}
