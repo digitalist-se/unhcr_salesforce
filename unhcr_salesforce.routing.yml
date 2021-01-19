@@ -1,5 +1,5 @@
 unhcr_salesforce.settings:
-  path: '/admin/config/services/unhcr'
+  path: '/admin/config/services/unhcr-salesforce'
   defaults:
     _title: 'UNHCR Salesforce Settings'
     _form: '\Drupal\unhcr_salesforce\Form\SettingsForm'
