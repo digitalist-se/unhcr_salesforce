@@ -192,7 +192,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
         ],
       ];
 
-      $donor_info = $this->salesforceClient->createDonation($donation_data);
+      $donor_info = $this->salesforceClient->createDonation($donation_data, ['type' => 'recurring', 'submission_data' => $submission_data]);
       if (isset($donor_info->data['errors'])) {
         foreach ($donor_info->data['errors'] as $error) {
           $this->log('error', $error['message'] . ' ' . $error['detail']);

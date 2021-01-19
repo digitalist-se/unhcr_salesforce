@@ -148,19 +148,21 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
     // This is the place where decide if send autogiro or one time donation.
     switch ($submission_data['order_type']) {
       case 'unhcr_monthly_order_type':
+        $type = 'recurring';
         $donation_data = $this->prepareAutoGiroData($submission, $submission_data);
         break;
       case 'unhcr_honorial_':
       case 'engasgava_order':
       case 'unhcr_one_time_company_':
       case 'unhcr_gift':
+        $type = 'single';
         $donation_data = $this->prepareOneTimeData($submission, $submission_data);
         break;
     }
 
     if ($donation_data) {
       try {
-        $donor_info = $this->salesforceClient->createDonation($donation_data);
+        $donor_info = $this->salesforceClient->createDonation($donation_data, ['type' => $type, 'submission_data' => $submission_data]);
         if (isset($donor_info->data['errors'])) {
           foreach ($donor_info->data['errors'] as $error) {
             $this->log('error', $error['message'] . ' ' . $error['detail']);

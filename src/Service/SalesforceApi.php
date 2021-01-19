@@ -8,6 +8,9 @@ use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\salesforce\Exception;
 use Drupal\salesforce\Rest\RestClientInterface;
 use Drupal\salesforce\SelectQuery;
+use Drupal\unhcr_salesforce\Event\SubmissionEvent;
+use Drupal\unhcr_salesforce\Event\SubmissionEvents;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Class SalesforceApi
@@ -40,6 +43,13 @@ class SalesforceApi implements SalesforceApiInterface {
   protected $entityTypeManager;
 
   /**
+   * The event dispatcher.
+   *
+   * @var \Symfony\Component\EventDispatcher\EventDispatcherInterface
+   */
+  protected $eventDispatcher;
+
+  /**
    * Constructs a SalesforceApi object.
    *
    * @param \Drupal\salesforce\Rest\RestClientInterface $sfapi
@@ -48,11 +58,14 @@ class SalesforceApi implements SalesforceApiInterface {
    *   The Drupal config factory.
    * @param EntityTypeManagerInterface $entityTypeManager
    *   The entity type manager.
+   * @param \Symfony\Component\EventDispatcher\EventDispatcherInterface $eventDispatcher
+   *   The event dispatcher used to notify subscribers of config import events.
    */
-  public function __construct(RestClientInterface $sfapi, ConfigFactoryInterface $configFactory, EntityTypeManagerInterface $entityTypeManager) {
+  public function __construct(RestClientInterface $sfapi, ConfigFactoryInterface $configFactory, EntityTypeManagerInterface $entityTypeManager, EventDispatcherInterface $eventDispatcher) {
     $this->sfapi = $sfapi;
     $this->configFactory = $configFactory;
     $this->entityTypeManager = $entityTypeManager;
+    $this->eventDispatcher = $eventDispatcher;
   }
 
   /**
@@ -161,9 +174,13 @@ class SalesforceApi implements SalesforceApiInterface {
   /**
    * {@inheritdoc}
    */
-  public function createDonation(array $data) {
+  public function createDonation(array $data, array $metadata = []) {
     try {
-      return $this->sfapi->apiCall('/services/apexrest/gcis/v1/data', $data, 'PUT', TRUE);
+      $response = $this->sfapi->apiCall('/services/apexrest/gcis/v1/data', $data, 'PUT', TRUE);
+      // Allow other modules to act after the donation has been created.
+      $event = new SubmissionEvent($response, $metadata);
+      $this->eventDispatcher->dispatch(SubmissionEvents::CREATE_DONATION, $event);
+      return $response;
     }
     catch (Exception $e) {
       watchdog_exception('unhcr_salesforce', $e);
