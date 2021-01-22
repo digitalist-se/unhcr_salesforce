@@ -499,7 +499,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
       $rows[] = [
         $item->getPurchasedEntity()->label(),
         $item->getPurchasedEntity()->getProduct()->label(),
-        $item->getQuantity(),
+        (int) $item->getQuantity(),
         $this->currencyFormatter->format($item->getTotalPrice()->getNumber(), $item->getTotalPrice()->getCurrencyCode()),
       ];
     }
