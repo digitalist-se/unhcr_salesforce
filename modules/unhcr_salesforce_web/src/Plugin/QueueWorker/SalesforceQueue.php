@@ -3,6 +3,7 @@
 namespace Drupal\unhcr_salesforce_web\Plugin\QueueWorker;
 
 use CommerceGuys\Intl\Formatter\CurrencyFormatterInterface;
+use Drupal\commerce_order\Entity\OrderInterface;
 use Drupal\Component\Serialization\Json;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Datetime\DrupalDateTime;
@@ -12,6 +13,8 @@ use Drupal\Core\Logger\RfcLoggerTrait;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Queue\QueueWorkerBase;
 use Drupal\Core\Queue\RequeueException;
+use Drupal\Core\Render\RendererInterface;
+use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\error_notifier\ErrorNotifier;
 use Drupal\unhcr_form_submissions\Entity\UnhcrFormSubmissionInterface;
 use Drupal\unhcr_salesforce\Service\SalesforceApiInterface;
@@ -29,6 +32,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginInterface {
 
   use RfcLoggerTrait;
+  use StringTranslationTrait;
 
   /**
    * The entity type manager.
@@ -73,6 +77,13 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
   protected $config;
 
   /**
+   * The renderer.
+   *
+   * @var \Drupal\Core\Render\RendererInterface
+   */
+  protected $renderer;
+
+  /**
    * Constructs a SalesforceQueue object.
    *
    * @param array $configuration
@@ -93,8 +104,10 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
    *   The currency formatter.
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   A config factory for retrieving required config objects.
+   * @param \Drupal\Core\Render\RendererInterface $renderer
+   *   The renderer.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, EntityTypeManagerInterface $entity_type_manager, SalesforceApiInterface $salesforce_client, LoggerChannelFactoryInterface $logger_factory, ErrorNotifier $error_notifier, CurrencyFormatterInterface $currency_formatter, ConfigFactoryInterface $config_factory) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, EntityTypeManagerInterface $entity_type_manager, SalesforceApiInterface $salesforce_client, LoggerChannelFactoryInterface $logger_factory, ErrorNotifier $error_notifier, CurrencyFormatterInterface $currency_formatter, ConfigFactoryInterface $config_factory, RendererInterface $renderer) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->entityTypeManager = $entity_type_manager;
     $this->salesforceClient = $salesforce_client;
@@ -102,6 +115,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
     $this->errorNotifier = $error_notifier;
     $this->currencyFormatter = $currency_formatter;
     $this->config = $config_factory->get('unhcr_salesforce.settings');
+    $this->renderer = $renderer;
   }
 
   /**
@@ -201,7 +215,12 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
     if (!empty($company_name)) {
       $shipping_street .= '\r\n' . $company_name;
     }
-    $utm_codes = $this->getUTM($submission_data);
+    /** @var \Drupal\commerce_order\Entity\OrderInterface $order */
+    $order = $submission->get('commerce_order')->entity;
+    $utm_codes = $this->getUTM($order);
+    $gift_cert = $submission_data['order_type'] === 'unhcr_gift' &&
+      $order->hasField('field_purchase_type') &&
+      $order->get('field_purchase_type')->value == 'invoice';
 
     switch ($submission_data['field_customer_type_value']) {
       case 'C':
@@ -250,8 +269,9 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
             'gcdt__Payment_Reference__c' => $submission_data['transaction_id'],
             'gcdt__Opportunity_Amount__c' => (int) $submission_data['amount'],
             'gcdt__Campaign__c' => $submission_data['order_type'] === 'unhcr_gift' ? $this->config->get('salesforce_gift_campaign') : $submission_data['field_charity_campaign'],
-            'Giftshop_Summary_S4U__c' => $submission_data['order_type'] === 'unhcr_gift' ? $this->getGiftshopSummary($submission) : '',
+            'Giftshop_Summary_S4U__c' => $submission_data['order_type'] === 'unhcr_gift' ? $this->getGiftshopSummary($order) : '',
             'Is_Giftshop_Gift_S4U__c' => $submission_data['order_type'] === 'unhcr_gift',
+            'Postal_Gift_Cert_Requested_S4U__c' => $gift_cert,
             'Drupal_Order_ID_S4U__c' => $submission_data['order_id'],
             'gcdt__Opportunity_CloseDate__c' => $date->format('Y-m-d'),
             'CurrencyISOCode' => 'SEK',
@@ -297,8 +317,9 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
             'gcdt__Payment_Reference__c' => $submission_data['transaction_id'],
             'gcdt__Opportunity_Amount__c' => (int) $submission_data['amount'],
             'gcdt__Campaign__c' => $submission_data['order_type'] === 'unhcr_gift' ? $this->config->get('salesforce_gift_campaign') : ($submission_data['field_charity_campaign'] ?? ''),
-            'Giftshop_Summary_S4U__c' => $submission_data['order_type'] === 'unhcr_gift' ? $this->getGiftshopSummary($submission) : '',
+            'Giftshop_Summary_S4U__c' => $submission_data['order_type'] === 'unhcr_gift' ? $this->getGiftshopSummary($order) : '',
             'Is_Giftshop_Gift_S4U__c' => $submission_data['order_type'] === 'unhcr_gift',
+            'Postal_Gift_Cert_Requested_S4U__c' => $gift_cert,
             'Drupal_Order_ID_S4U__c' => $submission_data['order_id'],
             'gcdt__Opportunity_CloseDate__c' => $date->format('Y-m-d'),
             'CurrencyISOCode' => 'SEK',
@@ -346,7 +367,9 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
     if (!empty($company_name)) {
       $shipping_street .= '\r\n' . $company_name;
     }
-    $utm_codes = $this->getUTM($submission_data);
+    /** @var \Drupal\commerce_order\Entity\OrderInterface $order */
+    $order = $submission->get('commerce_order')->entity;
+    $utm_codes = $this->getUTM($order);
 
     $data['data'][] = [
       'attributes' => [
@@ -459,43 +482,47 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
   /**
    * Summary of the gift donation items.
    *
-   * @param \Drupal\unhcr_form_submissions\Entity\UnhcrFormSubmissionInterface $submission
-   *  Submission entity.
+   * @param \Drupal\commerce_order\Entity\OrderInterface $order
+   *   The order entity.
    *
    * @return string
    *   Concatenated list of the items included.
    */
-  protected function getGiftshopSummary(UnhcrFormSubmissionInterface $submission) {
-    $summary = [];
-    /** @var \Drupal\commerce_order\Entity\OrderInterface $order */
-    $order = $submission->get('commerce_order')->entity;
+  protected function getGiftshopSummary(OrderInterface $order) {
+    $table = [
+      '#type' => 'table',
+      '#header' => [$this->t('Id'), $this->t('Name'), $this->t('Qty'), $this->t('Price')],
+    ];
+    $rows = [];
     foreach ($order->getItems() as $item) {
-      $summary[] = $item->getPurchasedEntity()->label() . ' "'. $item->getPurchasedEntity()->getProduct()->label() .'" ' . $item->getQuantity() . ' ' . $this->currencyFormatter->format($item->getTotalPrice()->getNumber(), $item->getTotalPrice()->getCurrencyCode());
+      $rows[] = [
+        $item->getPurchasedEntity()->label(),
+        $item->getPurchasedEntity()->getProduct()->label(),
+        $item->getQuantity(),
+        $this->currencyFormatter->format($item->getTotalPrice()->getNumber(), $item->getTotalPrice()->getCurrencyCode()),
+      ];
     }
+    $table['#rows'] = $rows;
 
-    return implode('<br />', $summary);
+    return $this->renderer->renderPlain($table);
   }
 
   /**
    * Returns the UTM codes from the order.
    *
-   * @param array $submission_data
-   *   The submission data.
+   * @param \Drupal\commerce_order\Entity\OrderInterface $order
+   *   The order entity.
    *
    * @return array
    *   UTM codes array.
    */
-  protected function getUTM(array $submission_data) {
-    $utm_codes = array_fill_keys(['source', 'medium', 'campaign', 'content', 'term'], '');
-
-    /** @var \Drupal\commerce_order\Entity\OrderInterface $order */
-    if ($order = $this->entityTypeManager->getStorage('commerce_order')->load($submission_data['order_id'])) {
-      $utm_codes['source'] = $order->getData('utm_source', '');
-      $utm_codes['medium'] = $order->getData('utm_medium', '');
-      $utm_codes['campaign'] = $order->getData('utm_campaign', '');
-      $utm_codes['content'] = $order->getData('utm_content', '');
-      $utm_codes['term'] = $order->getData('utm_term', '');
-    }
+  protected function getUTM(OrderInterface $order) {
+    $utm_codes = [];
+    $utm_codes['source'] = $order->getData('utm_source', '');
+    $utm_codes['medium'] = $order->getData('utm_medium', '');
+    $utm_codes['campaign'] = $order->getData('utm_campaign', '');
+    $utm_codes['content'] = $order->getData('utm_content', '');
+    $utm_codes['term'] = $order->getData('utm_term', '');
 
     return $utm_codes;
   }
