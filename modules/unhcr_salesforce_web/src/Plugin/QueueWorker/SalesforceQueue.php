@@ -131,7 +131,8 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
       $container->get('logger.factory'),
       $container->get('error_notifier'),
       $container->get('commerce_price.currency_formatter'),
-      $container->get('config.factory')
+      $container->get('config.factory'),
+      $container->get('renderer')
     );
   }
 
