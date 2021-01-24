@@ -2,7 +2,6 @@
 
 namespace Drupal\unhcr_salesforce_f2f\Plugin\QueueWorker;
 
-use CommerceGuys\Intl\Formatter\CurrencyFormatterInterface;
 use Drupal\Component\Serialization\Json;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Datetime\DrupalDateTime;
@@ -11,9 +10,7 @@ use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Core\Logger\RfcLoggerTrait;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Queue\QueueWorkerBase;
-use Drupal\Core\Queue\RequeueException;
 use Drupal\error_notifier\ErrorNotifier;
-use Drupal\unhcr_form_submissions\Entity\UnhcrFormSubmissionInterface;
 use Drupal\unhcr_salesforce\Service\SalesforceApiInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -187,6 +184,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
           'gcdt__Campaign__c' => $submission->get('campaign')->value,
           'Recruiter_S4U__c' => $submission->get('recruiter')->value,
           'Mandate_Signed_S4U__c' => $signed,
+          'Bank_Account_Number_S4U__c' => $submission_data['bank_number'] ?? '',
           'CurrencyISOCode' => 'SEK',
           'gcdt__Process_Type__c' => 'WebRegular',
         ],
