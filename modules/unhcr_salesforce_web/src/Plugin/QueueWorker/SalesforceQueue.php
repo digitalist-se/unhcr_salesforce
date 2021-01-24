@@ -401,6 +401,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
         'gcdt__Payment_Method__c' => 'Autogiro',
         'gcdt__Campaign__c' => $submission_data['field_charity_campaign'] ?? '',
         'Mandate_Signed_S4U__c' => $signed,
+        'Bank_Account_Number_S4U__c' => $submission_data['bank_number'] ?? '',
         'CurrencyISOCode' => 'SEK',
         'gcdt__Process_Type__c' => 'WebRegular',
         'Drupal_Order_ID_S4U__c' => $submission_data['order_id'],
