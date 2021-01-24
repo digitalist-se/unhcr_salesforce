@@ -160,6 +160,7 @@ class SalesforceApi implements SalesforceApiInterface {
       $soql_query = new SelectQuery('Contact');
       $soql_query->fields = ['Id', 'unig__Active_Recurring_Donation__c'];
       $soql_query->addCondition('Personal_ID_S4U__c', "'$ssn'");
+      $soql_query->addCondition('unig__Active_Recurring_Donation__c', 'TRUE');
       $soql_query->limit = 1;
       $contacts = $this->sfapi->query($soql_query)->records();
       return reset($contacts);
