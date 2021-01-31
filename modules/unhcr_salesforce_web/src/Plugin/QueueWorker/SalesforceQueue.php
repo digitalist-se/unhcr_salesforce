@@ -177,7 +177,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
 
     if ($donation_data) {
       try {
-        $donor_info = $this->salesforceClient->createDonation($donation_data, ['type' => $type, 'submission_data' => $submission_data]);
+        $donor_info = $this->salesforceClient->createDonation($donation_data, ['type' => $type, 'submission_data' => $submission_data, 'submission' => $submission]);
         if (isset($donor_info->data['errors'])) {
           foreach ($donor_info->data['errors'] as $error) {
             $this->log('error', $error['message'] . ' ' . $error['detail']);
@@ -498,7 +498,6 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
     $rows = [];
     foreach ($order->getItems() as $item) {
       $rows[] = [
-        $item->getPurchasedEntity()->label(),
         $item->getPurchasedEntity()->getProduct()->label(),
         (int) $item->getQuantity(),
         (int) $this->currencyFormatter->format($item->getTotalPrice()->getNumber(), $item->getTotalPrice()->getCurrencyCode()),

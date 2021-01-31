@@ -28,6 +28,7 @@ dependencies:
     - field.field.commerce_product.unhcr_honorial_donations.field_thank_you_page
     - field.field.commerce_product.unhcr_honorial_donations.field_user_profile
     - field.field.commerce_product.unhcr_honorial_donations.field_webform_selection
+    - field.field.commerce_product.unhcr_honorial_donations.marketing_cloud_imageblock
   module:
     - allowed_formats
     - entity_browser
@@ -106,6 +107,7 @@ third_party_settings:
       children:
         - field_email_subject
         - field_email_body
+        - marketing_cloud_imageblock
       parent_name: group_basic_info
       weight: 22
       format_type: tab
@@ -314,6 +316,14 @@ content:
     settings:
       include_locked: true
     third_party_settings: {  }
+  marketing_cloud_imageblock:
+    weight: 29
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+    type: string_textfield
+    region: content
   path:
     type: path
     weight: 1
