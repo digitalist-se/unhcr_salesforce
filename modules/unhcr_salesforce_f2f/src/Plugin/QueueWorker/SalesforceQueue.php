@@ -10,6 +10,7 @@ use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Core\Logger\RfcLoggerTrait;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Queue\QueueWorkerBase;
+use Drupal\Core\Url;
 use Drupal\error_notifier\ErrorNotifier;
 use Drupal\unhcr_salesforce\Service\SalesforceApiInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -125,6 +126,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
       return;
     }
 
+    $signed = FALSE;
     switch ($submission->get('submission_state')->value) {
       case 'signed':
         // All is well.
@@ -135,6 +137,10 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
       case 'missing_bank_interest_queued':
         $signed = TRUE;
         $this->info('Submission @id is being sent to Salesforce without bank details.', ['@id' => $submission->id()]);
+        break;
+
+      case 'missing_bank_signed':
+        $this->info('Sending submission @id to Salesforce without signature', ['@id' => $submission->id()]);
         break;
 
       case 'created_bisnode':
@@ -171,6 +177,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
           'unig__Source_Type__c' => 'Donation',
         ],
       ];
+      $continuation_url = Url::fromRoute('unhcr_form.assently.create_secondary', ['submission' => $submission->id(), 'uuid' => $submission->uuid(),], ['absolute' => TRUE])->toString();
       $donation_data['data'][] = [
         'attributes' => [
           'sObject' => 'gcdt__Holding__c',
@@ -187,10 +194,11 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
           'Bank_Account_Number_S4U__c' => $submission_data['bank_number'] ?? '',
           'CurrencyISOCode' => 'SEK',
           'gcdt__Process_Type__c' => 'WebRegular',
+          'Sign_Up_Continuation_URL_S4U__c' => empty($submission_data['bank_number']) ? $continuation_url : '',
         ],
       ];
 
-      $donor_info = $this->salesforceClient->createDonation($donation_data, ['type' => 'recurring', 'submission_data' => $submission_data]);
+      $donor_info = $this->salesforceClient->createDonation($donation_data, ['type' => 'recurring', 'submission_data' => $submission_data, 'submission' => $submission]);
       if (isset($donor_info->data['errors'])) {
         foreach ($donor_info->data['errors'] as $error) {
           $this->log('error', $error['message'] . ' ' . $error['detail']);

@@ -33,7 +33,6 @@ class SalesforceSubmissionSubscriber implements EventSubscriberInterface {
     /* @var \Drupal\Core\Queue\QueueInterface $queue */
     // @TODO: Inject dependencies.
     $queue = \Drupal::service('queue')->get('salesforce_queue');
-    $create_submission = FALSE;
     if ($options['update'] === TRUE && $submission->hasField('submission_state') && !$submission->get('submission_state')->isEmpty()) {
       // In case the user has signed in Assently, with or without bank
       // details, the submission is processed.
