@@ -493,7 +493,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
   protected function getGiftshopSummary(OrderInterface $order) {
     $table = [
       '#type' => 'table',
-      '#header' => [$this->t('Id'), $this->t('Name'), $this->t('Qty'), $this->t('Price')],
+      '#header' => [$this->t('Name'), $this->t('Qty'), $this->t('Price')],
     ];
     $rows = [];
     foreach ($order->getItems() as $item) {
@@ -501,7 +501,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
         $item->getPurchasedEntity()->label(),
         $item->getPurchasedEntity()->getProduct()->label(),
         (int) $item->getQuantity(),
-        $this->currencyFormatter->format($item->getTotalPrice()->getNumber(), $item->getTotalPrice()->getCurrencyCode()),
+        (int) $this->currencyFormatter->format($item->getTotalPrice()->getNumber(), $item->getTotalPrice()->getCurrencyCode()),
       ];
     }
     $table['#rows'] = $rows;
