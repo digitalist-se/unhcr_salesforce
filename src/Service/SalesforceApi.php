@@ -143,7 +143,7 @@ class SalesforceApi implements SalesforceApiInterface {
     try {
       $soql_query = new SelectQuery('Recruiter__c');
       $soql_query->fields = ['Id', 'Name'];
-      $soql_query->addCondition('IsActive', 'TRUE');
+      $soql_query->addCondition('Active_s4u__c', 'TRUE');
       return $this->sfapi->query($soql_query)->records();
     }
     catch (Exception $e) {
