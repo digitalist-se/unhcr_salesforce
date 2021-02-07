@@ -165,6 +165,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
           'sObject' => 'Contact',
           'referenceId' => 'CONTACT',
           'matchRecord' => 'true',
+          'doNotOverride' => 'unig__Source_Campaign__c',
         ],
         'record' => [
           'Personal_ID_S4U__c' => $submission_data['pnum'],
@@ -175,6 +176,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
           'MailingStreet' => $submission_data['street_address'],
           'MailingPostalCode' => (int) str_replace(' ', '', $submission_data['postal_code']),
           'unig__Source_Type__c' => 'Donation',
+          'unig__Source_Campaign__c' => $submission->get('campaign')->value,
         ],
       ];
       $continuation_url = Url::fromRoute('unhcr_form.assently.create_secondary', ['submission' => $submission->id(), 'uuid' => $submission->uuid(),], ['absolute' => TRUE])->toString();

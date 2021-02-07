@@ -216,6 +216,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
 
     switch ($submission_data['field_customer_type_value']) {
       case 'C':
+        $campaign = $submission_data['order_type'] === 'unhcr_gift' ? $this->config->get('salesforce_gift_campaign') : $submission_data['field_charity_campaign'];
         $data['data'][] = [
           'attributes' => [
             'sObject' => 'Account',
@@ -240,6 +241,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
             'sObject' => 'Contact',
             'referenceId' => 'CONTACT',
             'matchRecord' => 'true',
+            'doNotOverride' => "unig__Source_Campaign__c",
           ],
           'record' => [
             'npsp__Primary_Affiliation__c' => '@ACCOUNT',
@@ -247,6 +249,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
             'LastName' => $submission_data['last_name'],
             'Email' => $submission_data['email'],
             'unig__Source_Type__c' => 'Donation',
+            'unig__Source_Campaign__c' => $campaign,
           ],
         ];
         $data['data'][] = [
@@ -260,7 +263,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
             'gcdt__Payment_Method__c' => $this->getPaymentMethod($submission_data),
             'gcdt__Payment_Reference__c' => $submission_data['transaction_id'],
             'gcdt__Opportunity_Amount__c' => (int) $submission_data['amount'],
-            'gcdt__Campaign__c' => $submission_data['order_type'] === 'unhcr_gift' ? $this->config->get('salesforce_gift_campaign') : $submission_data['field_charity_campaign'],
+            'gcdt__Campaign__c' => $campaign,
             'Giftshop_Summary_S4U__c' => $submission_data['order_type'] === 'unhcr_gift' ? $this->getGiftshopSummary($order) : '',
             'Is_Giftshop_Gift_S4U__c' => $submission_data['order_type'] === 'unhcr_gift',
             'Postal_Gift_Cert_Requested_S4U__c' => $gift_cert,
@@ -268,7 +271,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
             'gcdt__Opportunity_CloseDate__c' => $date->format('Y-m-d'),
             'CurrencyISOCode' => 'SEK',
             'gcdt__Process_Type__c' => 'WebSingle',
-            'Customer_Type_S4U__c' => 'Private',
+            'Customer_Type_S4U__c' => 'Company',
             // UTM codes.
             "UTM_Source_S4U__c" => $utm_codes['source'],
             "UTM_Medium_S4U__c" => $utm_codes['medium'],
@@ -281,11 +284,13 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
 
       case 'P':
       default:
+        $campaign = $submission_data['order_type'] === 'unhcr_gift' ? $this->config->get('salesforce_gift_campaign') : ($submission_data['field_charity_campaign'] ?? '');
         $data['data'][] = [
           'attributes' => [
             'sObject' => 'Contact',
             'referenceId' => 'CONTACT',
             'matchRecord' => 'true',
+            'doNotOverride' => 'Personal_ID_S4U__c,unig__Source_Campaign__c',
           ],
           'record' => [
             'Personal_ID_S4U__c' => $ssn,
@@ -296,6 +301,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
             'MailingStreet' => $shipping_street,
             'MailingPostalCode' => str_replace(' ', '', $submission_data['postal_code']),
             'unig__Source_Type__c' => 'Donation',
+            'unig__Source_Campaign__c' => $campaign,
           ],
         ];
         $data['data'][] = [
@@ -308,7 +314,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
             'gcdt__Payment_Method__c' => $this->getPaymentMethod($submission_data),
             'gcdt__Payment_Reference__c' => $submission_data['transaction_id'],
             'gcdt__Opportunity_Amount__c' => (int) $submission_data['amount'],
-            'gcdt__Campaign__c' => $submission_data['order_type'] === 'unhcr_gift' ? $this->config->get('salesforce_gift_campaign') : ($submission_data['field_charity_campaign'] ?? ''),
+            'gcdt__Campaign__c' => $campaign,
             'Giftshop_Summary_S4U__c' => $submission_data['order_type'] === 'unhcr_gift' ? $this->getGiftshopSummary($order) : '',
             'Is_Giftshop_Gift_S4U__c' => $submission_data['order_type'] === 'unhcr_gift',
             'Postal_Gift_Cert_Requested_S4U__c' => $gift_cert,
@@ -368,6 +374,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
         'sObject' => 'Contact',
         'referenceId' => 'CONTACT',
         'matchRecord' => 'true',
+        'doNotOverride' => 'unig__Source_Campaign__c',
       ],
       'record' => [
         'Personal_ID_S4U__c' => $ssn,
@@ -378,6 +385,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
         'MailingStreet' => $shipping_street,
         'MailingPostalCode' => str_replace(' ', '', $submission_data['postal_code']),
         'unig__Source_Type__c' => 'Donation',
+        'unig__Source_Campaign__c' => $submission_data['field_charity_campaign'] ?? '',
       ],
     ];
     $data['data'][] = [
