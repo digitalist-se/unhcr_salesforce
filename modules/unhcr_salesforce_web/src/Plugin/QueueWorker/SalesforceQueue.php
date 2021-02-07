@@ -174,21 +174,12 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
         $donation_data = $this->prepareOneTimeData($submission, $submission_data);
         break;
     }
-
     if ($donation_data) {
       try {
-        $donor_info = $this->salesforceClient->createDonation($donation_data, ['type' => $type, 'submission_data' => $submission_data, 'submission' => $submission]);
-        if (isset($donor_info->data['errors'])) {
-          foreach ($donor_info->data['errors'] as $error) {
-            $this->log('error', $error['message'] . ' ' . $error['detail']);
-          }
-          throw new \Exception('Salesforce error, try this one again later.');
-        }
+        $this->salesforceClient->createDonation($donation_data, ['type' => $type, 'submission_data' => $submission_data, 'submission' => $submission]);
       } catch (\Exception $e) {
         throw new \Exception('Salesforce error, try this one again later.');
       }
-
-
     }
   }
 

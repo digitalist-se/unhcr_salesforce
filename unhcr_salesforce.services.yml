@@ -1,4 +1,4 @@
 services:
   unhcr_salesforce.client:
     class: Drupal\unhcr_salesforce\Service\SalesforceApi
-    arguments: ['@salesforce.client', '@config.factory', '@entity_type.manager', '@event_dispatcher']
+    arguments: ['@salesforce.client', '@config.factory', '@entity_type.manager', '@event_dispatcher', '@logger.factory']

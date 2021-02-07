@@ -4,6 +4,7 @@ namespace Drupal\unhcr_salesforce\Service;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\salesforce\Exception;
 use Drupal\salesforce\Rest\RestClientInterface;
@@ -31,14 +32,14 @@ class SalesforceApi implements SalesforceApiInterface {
   /**
    * The Drupal config factory.
    *
-   * @var ConfigFactoryInterface
+   * @var \Drupal\Core\Config\ConfigFactoryInterface
    */
   protected $configFactory;
 
   /**
-   * The entity type manager.
+   * The entity type manager service.
    *
-   * @var EntityTypeManagerInterface
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
   protected $entityTypeManager;
 
@@ -48,6 +49,13 @@ class SalesforceApi implements SalesforceApiInterface {
    * @var \Symfony\Component\EventDispatcher\EventDispatcherInterface
    */
   protected $eventDispatcher;
+
+  /**
+   * The logger factory.
+   *
+   * @var \Drupal\Core\Logger\LoggerChannelFactoryInterface
+   */
+  protected $loggerFactory;
 
   /**
    * Constructs a SalesforceApi object.
@@ -60,12 +68,15 @@ class SalesforceApi implements SalesforceApiInterface {
    *   The entity type manager.
    * @param \Symfony\Component\EventDispatcher\EventDispatcherInterface $eventDispatcher
    *   The event dispatcher used to notify subscribers of config import events.
+   * @param \Drupal\Core\Logger\LoggerChannelFactoryInterface $loggerFactory
+   *   The logger factory.
    */
-  public function __construct(RestClientInterface $sfapi, ConfigFactoryInterface $configFactory, EntityTypeManagerInterface $entityTypeManager, EventDispatcherInterface $eventDispatcher) {
+  public function __construct(RestClientInterface $sfapi, ConfigFactoryInterface $configFactory, EntityTypeManagerInterface $entityTypeManager, EventDispatcherInterface $eventDispatcher, LoggerChannelFactoryInterface $loggerFactory) {
     $this->sfapi = $sfapi;
     $this->configFactory = $configFactory;
     $this->entityTypeManager = $entityTypeManager;
     $this->eventDispatcher = $eventDispatcher;
+    $this->loggerFactory = $loggerFactory;
   }
 
   /**
@@ -132,6 +143,7 @@ class SalesforceApi implements SalesforceApiInterface {
     try {
       $soql_query = new SelectQuery('Recruiter__c');
       $soql_query->fields = ['Id', 'Name'];
+      $soql_query->addCondition('IsActive', 'TRUE');
       return $this->sfapi->query($soql_query)->records();
     }
     catch (Exception $e) {
@@ -178,6 +190,13 @@ class SalesforceApi implements SalesforceApiInterface {
   public function createDonation(array $data, array $metadata = []) {
     try {
       $response = $this->sfapi->apiCall('/services/apexrest/gcis/v1/data', $data, 'PUT', TRUE);
+      // Handle errors.
+      if (isset($response->data['errors'])) {
+        foreach ($response->data['errors'] as $error) {
+          $this->log('error', $error['message'] . ' ' . $error['detail']);
+        }
+        throw new \Exception('Salesforce error, try this one again later. Marketing Cloud has not been triggered.');
+      }
       // Allow other modules to act after the donation has been created.
       $event = new SubmissionEvent($response, $metadata);
       $this->eventDispatcher->dispatch(SubmissionEvents::CREATE_DONATION, $event);
@@ -188,6 +207,13 @@ class SalesforceApi implements SalesforceApiInterface {
     }
 
     return [];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function log($level, $message, array $context = []) {
+    $this->loggerFactory->get('salesforce_queue')->log($level, $message, $context);
   }
 
 }
