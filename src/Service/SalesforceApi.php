@@ -213,7 +213,7 @@ class SalesforceApi implements SalesforceApiInterface {
    * {@inheritdoc}
    */
   public function log($level, $message, array $context = []) {
-    $this->loggerFactory->get('salesforce_queue')->log($level, $message, $context);
+    $this->loggerFactory->get('unhcr_salesforce')->log($level, $message, $context);
   }
 
 }
