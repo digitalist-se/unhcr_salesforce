@@ -37,7 +37,7 @@ class SalesforceSubmissionSubscriber implements EventSubscriberInterface {
       // In case the user has signed in Assently, with or without bank
       // details, the submission is processed.
       $state = $submission->get('submission_state')->value;
-      if ($state == 'signed' || $state == 'missing_bank_signed') {
+      if ($state == 'signed' || $state == 'missing_bank_signed' || $state == 'missing_bank_interest_queued') {
         $queue->createItem($submission->id());
       }
     }

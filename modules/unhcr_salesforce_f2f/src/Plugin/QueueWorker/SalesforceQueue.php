@@ -135,11 +135,11 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
         break;
 
       case 'missing_bank_interest_queued':
-        $signed = TRUE;
         $this->info('Submission @id is being sent to Salesforce without bank details.', ['@id' => $submission->id()]);
         break;
 
       case 'missing_bank_signed':
+        $signed = TRUE;
         $this->info('Sending submission @id to Salesforce without signature', ['@id' => $submission->id()]);
         break;
 
@@ -159,46 +159,62 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
         'data' => [],
       ];
       $date = new DrupalDateTime();
-
-      $donation_data['data'][] = [
-        'attributes' => [
-          'sObject' => 'Contact',
-          'referenceId' => 'CONTACT',
-          'matchRecord' => 'true',
-          'doNotOverride' => 'unig__Source_Campaign__c',
-        ],
-        'record' => [
-          'Personal_ID_S4U__c' => $submission_data['pnum'],
-          'FirstName' => $submission_data['first_name'],
-          'LastName' => $submission_data['last_name'],
-          'Email' => $submission_data['email'],
-          'MailingCity' => $submission_data['city'],
-          'MailingStreet' => $submission_data['street_address'],
-          'MailingPostalCode' => (int) str_replace(' ', '', $submission_data['postal_code']),
-          'unig__Source_Type__c' => 'Donation',
-          'unig__Source_Campaign__c' => $submission->get('campaign')->value,
-        ],
-      ];
       $continuation_url = Url::fromRoute('unhcr_form.assently.create_secondary', ['submission' => $submission->id(), 'uuid' => $submission->uuid(),], ['absolute' => TRUE])->toString();
-      $donation_data['data'][] = [
-        'attributes' => [
-          'sObject' => 'gcdt__Holding__c',
-        ],
-        'record' => [
-          'gcdt__Contact__c' => '@CONTACT',
-          'Phone_S4U__c' => !empty($submission_data['mobile_phone']) ? '46' . substr($submission_data['mobile_phone'], 1) : NULL,
-          'gcdt__Recurring_Start_Date__c' => $date->format('Y-m-d'),
-          'gcdt__Recurring_Amount__c' => (int) $submission_data['amount'],
-          'gcdt__Payment_Method__c' => 'Autogiro',
-          'gcdt__Campaign__c' => $submission->get('campaign')->value,
-          'Recruiter_S4U__c' => $submission->get('recruiter')->value,
-          'Mandate_Signed_S4U__c' => $signed,
-          'Bank_Account_Number_S4U__c' => $submission_data['bank_number'] ?? '',
-          'CurrencyISOCode' => 'SEK',
-          'gcdt__Process_Type__c' => 'WebRegular',
-          'Sign_Up_Continuation_URL_S4U__c' => empty($submission_data['bank_number']) ? $continuation_url : '',
-        ],
-      ];
+
+      if ($submission->get('submission_state')->value == 'missing_bank_signed') {
+        $donation_data['data'][] = [
+          'attributes' => [
+            'sObject' => 'gcdt__Holding__c',
+          ],
+          'record' => [
+            'Bank_Account_Number_S4U__c' => $submission_data['bank_number'],
+            'gcdt__Process_Type__c' => 'WebF2FContinuation',
+            'Sign_Up_Continuation_ID_S4U__c' => $submission->id(),
+            'Sign_Up_Continuation_URL_S4U__c' => $continuation_url,
+          ],
+        ];
+      }
+      else {
+        $donation_data['data'][] = [
+          'attributes' => [
+            'sObject' => 'Contact',
+            'referenceId' => 'CONTACT',
+            'matchRecord' => 'true',
+            'doNotOverride' => 'unig__Source_Campaign__c',
+          ],
+          'record' => [
+            'Personal_ID_S4U__c' => $submission_data['pnum'],
+            'FirstName' => $submission_data['first_name'],
+            'LastName' => $submission_data['last_name'],
+            'Email' => $submission_data['email'],
+            'MailingCity' => $submission_data['city'],
+            'MailingStreet' => $submission_data['street_address'],
+            'MailingPostalCode' => (int) str_replace(' ', '', $submission_data['postal_code']),
+            'unig__Source_Type__c' => 'Donation',
+            'unig__Source_Campaign__c' => $submission->get('campaign')->value,
+          ],
+        ];
+        $donation_data['data'][] = [
+          'attributes' => [
+            'sObject' => 'gcdt__Holding__c',
+          ],
+          'record' => [
+            'gcdt__Contact__c' => '@CONTACT',
+            'Phone_S4U__c' => !empty($submission_data['mobile_phone']) ? '46' . substr($submission_data['mobile_phone'], 1) : NULL,
+            'gcdt__Recurring_Start_Date__c' => $date->format('Y-m-d'),
+            'gcdt__Recurring_Amount__c' => (int) $submission_data['amount'],
+            'gcdt__Payment_Method__c' => 'Autogiro',
+            'gcdt__Campaign__c' => $submission->get('campaign')->value,
+            'Recruiter_S4U__c' => $submission->get('recruiter')->value,
+            'Mandate_Signed_S4U__c' => $signed,
+            'Bank_Account_Number_S4U__c' => $submission_data['bank_number'] ?? '',
+            'CurrencyISOCode' => 'SEK',
+            'gcdt__Process_Type__c' => 'WebRegular',
+            'Sign_Up_Continuation_URL_S4U__c' => empty($submission_data['bank_number']) ? $continuation_url : '',
+            'Sign_Up_Continuation_ID_S4U__c' => $submission->id(),
+          ],
+        ];
+      }
 
       $donor_info = $this->salesforceClient->createDonation($donation_data, ['type' => 'recurring', 'submission_data' => $submission_data, 'submission' => $submission->id()]);
       if (isset($donor_info->data['errors'])) {
