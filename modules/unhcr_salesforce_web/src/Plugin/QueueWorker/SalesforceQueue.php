@@ -34,6 +34,10 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
   use RfcLoggerTrait;
   use StringTranslationTrait;
 
+  // A number will be considered mobile if it starts with the following
+  // prefixes: 4670, 4672, 4673, 4676, 4679.
+  const MOBILE_PREFIXES = ['4670', '4672', '4673', '4676', '4679'];
+
   /**
    * The entity type manager.
    *
@@ -214,6 +218,15 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
       $order->hasField('field_purchase_type') &&
       $order->get('field_purchase_type')->value == 'invoice';
 
+    $phone_number = $this->processPhoneNumber($submission_data);
+    if (in_array(substr($phone_number, 0, 4), self::MOBILE_PREFIXES)) {
+      $mobile_number = $phone_number;
+    }
+    else {
+      $landline_number = $phone_number;
+    }
+
+
     switch ($submission_data['field_customer_type_value']) {
       case 'C':
         $campaign = $submission_data['order_type'] === 'unhcr_gift' ? $this->config->get('salesforce_gift_campaign') : $submission_data['field_charity_campaign'];
@@ -250,6 +263,8 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
             'Email' => $submission_data['email'],
             'unig__Source_Type__c' => 'Donation',
             'unig__Source_Campaign__c' => $campaign,
+            'Phone' => $mobile_number ?? '',
+            'MobilePhone' => $landline_number ?? '',
           ],
         ];
         $data['data'][] = [
@@ -259,7 +274,6 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
           'record' => [
             'gcdt__Account__c' => '@ACCOUNT',
             'gcdt__Contact__c' => '@CONTACT',
-            'Phone_S4U__c' => $submission_data['mobile_phone'] ?? '',
             'gcdt__Payment_Method__c' => $this->getPaymentMethod($submission_data),
             'gcdt__Payment_Reference__c' => $submission_data['transaction_id'],
             'gcdt__Opportunity_Amount__c' => (int) $submission_data['amount'],
@@ -302,6 +316,8 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
             'MailingPostalCode' => str_replace(' ', '', $submission_data['postal_code']),
             'unig__Source_Type__c' => 'Donation',
             'unig__Source_Campaign__c' => $campaign,
+            'Phone' => $mobile_number ?? '',
+            'MobilePhone' => $landline_number ?? '',
           ],
         ];
         $data['data'][] = [
@@ -310,7 +326,6 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
           ],
           'record' => [
             'gcdt__Contact__c' => '@CONTACT',
-            'Phone_S4U__c' => $submission_data['mobile_phone'] ?? '',
             'gcdt__Payment_Method__c' => $this->getPaymentMethod($submission_data),
             'gcdt__Payment_Reference__c' => $submission_data['transaction_id'],
             'gcdt__Opportunity_Amount__c' => (int) $submission_data['amount'],
@@ -369,6 +384,14 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
     $order = $submission->get('commerce_order')->entity;
     $utm_codes = $this->getUTM($order);
 
+    $phone_number = $this->processPhoneNumber($submission_data);
+    if (in_array(substr($phone_number, 0, 4), self::MOBILE_PREFIXES)) {
+      $mobile_number = $phone_number;
+    }
+    else {
+      $landline_number = $phone_number;
+    }
+
     $data['data'][] = [
       'attributes' => [
         'sObject' => 'Contact',
@@ -386,6 +409,8 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
         'MailingPostalCode' => str_replace(' ', '', $submission_data['postal_code']),
         'unig__Source_Type__c' => 'Donation',
         'unig__Source_Campaign__c' => $submission_data['field_charity_campaign'] ?? '',
+        'Phone' => $mobile_number ?? '',
+        'MobilePhone' => $landline_number ?? '',
       ],
     ];
     $data['data'][] = [
@@ -394,7 +419,6 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
       ],
       'record' => [
         'gcdt__Contact__c' => '@CONTACT',
-        'Phone_S4U__c' => $submission_data['mobile_phone'] ?? '',
         'gcdt__Recurring_Start_Date__c' => $date->format('Y-m-d'),
         'gcdt__Recurring_Amount__c' => (int) $submission_data['amount'],
         'gcdt__Payment_Method__c' => 'Autogiro',
@@ -566,6 +590,38 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
       default:
         return 'Other';
     }
+  }
+
+  /**
+   * Convert the phone number received to a more predictable format.
+   *
+   * Swedish phone number classification. This code is not pretty but it seems
+   * Salesforce is not able to process is very well otherwise.
+   *
+   * @param array $submission_data
+   *   The submission data.
+   *
+   * @return string
+   *   The processed phone number.
+   */
+  protected function processPhoneNumber(array $submission_data) {
+    if ($phone_number = $submission_data['mobile_phone']) {
+      // Remove anything that is not a number.
+      $phone_number = preg_replace('~\D~', '', $phone_number);
+
+      // Remove the 46 in case is prepended and someone enters a 4607XXXXX
+      // number.
+      if (substr($phone_number, 0, 2 ) === '46') {
+        $phone_number = substr($phone_number, 2);
+      }
+
+      // Remove 0 from the phone and prefix with 46 to make it more standard
+      // with other systems.
+      $phone_number = (int) $phone_number;
+      $phone_number = '46' . $phone_number;
+    }
+
+    return $phone_number ?? '';
   }
 
 }
