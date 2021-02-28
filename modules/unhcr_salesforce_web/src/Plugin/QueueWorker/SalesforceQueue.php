@@ -226,10 +226,8 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
       $landline_number = $phone_number;
     }
 
-
     switch ($submission_data['field_customer_type_value']) {
       case 'C':
-        $campaign = $submission_data['order_type'] === 'unhcr_gift' ? $this->config->get('salesforce_gift_campaign') : $submission_data['field_charity_campaign'];
         $data['data'][] = [
           'attributes' => [
             'sObject' => 'Account',
@@ -262,9 +260,9 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
             'LastName' => $submission_data['last_name'],
             'Email' => $submission_data['email'],
             'unig__Source_Type__c' => 'Donation',
-            'unig__Source_Campaign__c' => $campaign,
-            'Phone' => $mobile_number ?? '',
-            'MobilePhone' => $landline_number ?? '',
+            'unig__Source_Campaign__c' => $submission_data['field_charity_campaign'],
+            'Phone' =>  $landline_number ?? '',
+            'MobilePhone' => $mobile_number ?? '',
           ],
         ];
         $data['data'][] = [
@@ -277,7 +275,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
             'gcdt__Payment_Method__c' => $this->getPaymentMethod($submission_data),
             'gcdt__Payment_Reference__c' => $submission_data['transaction_id'],
             'gcdt__Opportunity_Amount__c' => (int) $submission_data['amount'],
-            'gcdt__Campaign__c' => $campaign,
+            'gcdt__Campaign__c' => $submission_data['field_charity_campaign'],
             'Giftshop_Summary_S4U__c' => $submission_data['order_type'] === 'unhcr_gift' ? $this->getGiftshopSummary($order) : '',
             'Is_Giftshop_Gift_S4U__c' => $submission_data['order_type'] === 'unhcr_gift',
             'Postal_Gift_Cert_Requested_S4U__c' => $gift_cert,
@@ -298,7 +296,6 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
 
       case 'P':
       default:
-        $campaign = $submission_data['order_type'] === 'unhcr_gift' ? $this->config->get('salesforce_gift_campaign') : ($submission_data['field_charity_campaign'] ?? '');
         $data['data'][] = [
           'attributes' => [
             'sObject' => 'Contact',
@@ -315,9 +312,9 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
             'MailingStreet' => $shipping_street,
             'MailingPostalCode' => str_replace(' ', '', $submission_data['postal_code']),
             'unig__Source_Type__c' => 'Donation',
-            'unig__Source_Campaign__c' => $campaign,
-            'Phone' => $mobile_number ?? '',
-            'MobilePhone' => $landline_number ?? '',
+            'unig__Source_Campaign__c' => $submission_data['field_charity_campaign'],
+            'Phone' =>  $landline_number ?? '',
+            'MobilePhone' => $mobile_number ?? '',
           ],
         ];
         $data['data'][] = [
@@ -329,7 +326,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
             'gcdt__Payment_Method__c' => $this->getPaymentMethod($submission_data),
             'gcdt__Payment_Reference__c' => $submission_data['transaction_id'],
             'gcdt__Opportunity_Amount__c' => (int) $submission_data['amount'],
-            'gcdt__Campaign__c' => $campaign,
+            'gcdt__Campaign__c' => $submission_data['field_charity_campaign'],
             'Giftshop_Summary_S4U__c' => $submission_data['order_type'] === 'unhcr_gift' ? $this->getGiftshopSummary($order) : '',
             'Is_Giftshop_Gift_S4U__c' => $submission_data['order_type'] === 'unhcr_gift',
             'Postal_Gift_Cert_Requested_S4U__c' => $gift_cert,
@@ -409,8 +406,8 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
         'MailingPostalCode' => str_replace(' ', '', $submission_data['postal_code']),
         'unig__Source_Type__c' => 'Donation',
         'unig__Source_Campaign__c' => $submission_data['field_charity_campaign'] ?? '',
-        'Phone' => $mobile_number ?? '',
-        'MobilePhone' => $landline_number ?? '',
+        'Phone' =>  $landline_number ?? '',
+        'MobilePhone' => $mobile_number ?? '',
       ],
     ];
     $data['data'][] = [
@@ -605,7 +602,8 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
    *   The processed phone number.
    */
   protected function processPhoneNumber(array $submission_data) {
-    if ($phone_number = $submission_data['mobile_phone']) {
+    if (!empty($submission_data['mobile_phone'])) {
+      $phone_number = $submission_data['mobile_phone'];
       // Remove anything that is not a number.
       $phone_number = preg_replace('~\D~', '', $phone_number);
 

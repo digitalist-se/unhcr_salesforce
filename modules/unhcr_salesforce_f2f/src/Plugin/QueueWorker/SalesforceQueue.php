@@ -192,6 +192,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
             'MailingPostalCode' => (int) str_replace(' ', '', $submission_data['postal_code']),
             'unig__Source_Type__c' => 'Donation',
             'unig__Source_Campaign__c' => $submission->get('campaign')->value,
+            'MobilePhone' => !empty($submission_data['mobile_phone']) ? '46' . substr($submission_data['mobile_phone'], 1) : NULL,
           ],
         ];
         $donation_data['data'][] = [
@@ -200,7 +201,6 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
           ],
           'record' => [
             'gcdt__Contact__c' => '@CONTACT',
-            'Phone_S4U__c' => !empty($submission_data['mobile_phone']) ? '46' . substr($submission_data['mobile_phone'], 1) : NULL,
             'gcdt__Recurring_Start_Date__c' => $date->format('Y-m-d'),
             'gcdt__Recurring_Amount__c' => (int) $submission_data['amount'],
             'gcdt__Payment_Method__c' => 'Autogiro',
