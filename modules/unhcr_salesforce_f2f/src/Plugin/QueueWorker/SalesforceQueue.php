@@ -195,6 +195,23 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
             'MobilePhone' => !empty($submission_data['mobile_phone']) ? '46' . substr($submission_data['mobile_phone'], 1) : NULL,
           ],
         ];
+        // Ensure empty records are not sent to SF to avoid overrides.
+        $not_nullable_fields = [
+          'Personal_ID_S4U__c',
+          'FirstName',
+          'LastName',
+          'Email',
+          'Phone',
+          'MobilePhone',
+          'MailingCity',
+          'MailingStreet',
+          'MailingPostalCode',
+        ];
+        foreach ($not_nullable_fields as $field) {
+          if (isset($data['data'][0]['record'][$field]) && empty($data['data'][0]['record'][$field])) {
+            unset($data['data'][0]['record'][$field]);
+          }
+        }
         $donation_data['data'][] = [
           'attributes' => [
             'sObject' => 'gcdt__Holding__c',

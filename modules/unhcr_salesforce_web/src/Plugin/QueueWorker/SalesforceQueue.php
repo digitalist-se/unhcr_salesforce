@@ -12,7 +12,6 @@ use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Core\Logger\RfcLoggerTrait;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Queue\QueueWorkerBase;
-use Drupal\Core\Queue\RequeueException;
 use Drupal\Core\Render\RendererInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\error_notifier\ErrorNotifier;
@@ -233,6 +232,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
             'sObject' => 'Account',
             'referenceId' => 'ACCOUNT',
             'matchRecord' => 'true',
+            'doNotOverride' => 'unig__Partner_Type__c,unig__Partner_Sub_Type__c,unig__Office_Type__c,unig__Income_Team_Manual__c',
           ],
           'record' => [
             'Organisational_Number_S4U__c' => $ssn,
@@ -247,12 +247,28 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
             'unig__Industry_Sector__c' => 'Unknown',
           ],
         ];
+        // Ensure empty records are not sent to SF to avoid overrides.
+        // @TODO: this should be made generic, however we're at the end of the
+        // project and the specs keep changing so leaving it like this for now.
+        $not_nullable_fields = [
+          'Organisational_Number_S4U__c',
+          'Name',
+          'ShippingCity',
+          'ShippingStreet',
+          'ShippingPostalCode',
+        ];
+        foreach ($not_nullable_fields as $field) {
+          if (isset($data['data'][0]['record'][$field]) && empty($data['data'][0]['record'][$field])) {
+            unset($data['data'][0]['record'][$field]);
+          }
+        }
+
         $data['data'][] = [
           'attributes' => [
             'sObject' => 'Contact',
             'referenceId' => 'CONTACT',
             'matchRecord' => 'true',
-            'doNotOverride' => "unig__Source_Campaign__c",
+            'doNotOverride' => "unig__Source_Campaign__c,unig__Source_Type__c",
           ],
           'record' => [
             'npsp__Primary_Affiliation__c' => '@ACCOUNT',
@@ -265,6 +281,24 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
             'MobilePhone' => $mobile_number ?? '',
           ],
         ];
+        // Ensure empty records are not sent to SF to avoid overrides.
+        $not_nullable_fields = [
+          'Personal_ID_S4U__c',
+          'FirstName',
+          'LastName',
+          'Email',
+          'Phone',
+          'MobilePhone',
+          'MailingCity',
+          'MailingStreet',
+          'MailingPostalCode',
+        ];
+        foreach ($not_nullable_fields as $field) {
+          if (isset($data['data'][1]['record'][$field]) && empty($data['data'][0]['record'][$field])) {
+            unset($data['data'][1]['record'][$field]);
+          }
+        }
+
         $data['data'][] = [
           'attributes' => [
             'sObject' => 'gcdt__Holding__c',
@@ -301,7 +335,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
             'sObject' => 'Contact',
             'referenceId' => 'CONTACT',
             'matchRecord' => 'true',
-            'doNotOverride' => 'Personal_ID_S4U__c,unig__Source_Campaign__c',
+            'doNotOverride' => 'Personal_ID_S4U__c,unig__Source_Campaign__c,unig__Source_Type__c',
           ],
           'record' => [
             'Personal_ID_S4U__c' => $ssn,
@@ -317,6 +351,24 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
             'MobilePhone' => $mobile_number ?? '',
           ],
         ];
+        // Ensure empty records are not sent to SF to avoid overrides.
+        $not_nullable_fields = [
+          'Personal_ID_S4U__c',
+          'FirstName',
+          'LastName',
+          'Email',
+          'Phone',
+          'MobilePhone',
+          'MailingCity',
+          'MailingStreet',
+          'MailingPostalCode',
+        ];
+        foreach ($not_nullable_fields as $field) {
+          if (isset($data['data'][0]['record'][$field]) && empty($data['data'][0]['record'][$field])) {
+            unset($data['data'][0]['record'][$field]);
+          }
+        }
+
         $data['data'][] = [
           'attributes' => [
             'sObject' => 'gcdt__Holding__c',
@@ -410,6 +462,24 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
         'MobilePhone' => $mobile_number ?? '',
       ],
     ];
+    // Ensure empty records are not sent to SF to avoid overrides.
+    $not_nullable_fields = [
+      'Personal_ID_S4U__c',
+      'FirstName',
+      'LastName',
+      'Email',
+      'Phone',
+      'MobilePhone',
+      'MailingCity',
+      'MailingStreet',
+      'MailingPostalCode',
+    ];
+    foreach ($not_nullable_fields as $field) {
+      if (isset($data['data'][0]['record'][$field]) && empty($data['data'][0]['record'][$field])) {
+        unset($data['data'][0]['record'][$field]);
+      }
+    }
+
     $data['data'][] = [
       'attributes' => [
         'sObject' => 'gcdt__Holding__c',
