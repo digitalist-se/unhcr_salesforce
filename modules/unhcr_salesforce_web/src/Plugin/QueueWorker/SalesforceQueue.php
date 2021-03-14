@@ -294,7 +294,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
           'MailingPostalCode',
         ];
         foreach ($not_nullable_fields as $field) {
-          if (isset($data['data'][1]['record'][$field]) && empty($data['data'][0]['record'][$field])) {
+          if (isset($data['data'][1]['record'][$field]) && empty($data['data'][1]['record'][$field])) {
             unset($data['data'][1]['record'][$field]);
           }
         }
@@ -583,7 +583,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
   protected function getGiftshopSummary(OrderInterface $order) {
     $table = [
       '#type' => 'table',
-      '#header' => [$this->t('Name'), $this->t('Qty'), $this->t('Price')],
+      '#header' => [$this->t('Article'), $this->t('Qty'), $this->t('Price')],
     ];
     $rows = [];
     foreach ($order->getItems() as $item) {
