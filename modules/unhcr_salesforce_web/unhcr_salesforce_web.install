@@ -19,9 +19,6 @@ function unhcr_salesforce_web_install() {
     'field.field.commerce_product.unhcr_honorial_donations.field_charity_campaign',
     'field.field.commerce_product.unhcr_monthly_product_type.field_charity_campaign',
     'field.storage.commerce_product.field_charity_campaign',
-    'field.field.commerce_product.unhcr_honorial_donations.marketing_cloud_imageblock',
-    'field.field.commerce_product.unhcr_monthly_product_type.marketing_cloud_imageblock',
-    'field.storage.commerce_product.marketing_cloud_imageblock',
   ];
 
   foreach ($config_files as $config_id) {
