@@ -129,18 +129,14 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
     $signed = FALSE;
     switch ($submission->get('submission_state')->value) {
       case 'signed':
-        // All is well.
         $signed = TRUE;
         $this->info('Sending submission @id to Salesforce', ['@id' => $submission->id()]);
         break;
 
       case 'missing_bank_interest_queued':
-        $this->info('Submission @id is being sent to Salesforce without bank details.', ['@id' => $submission->id()]);
-        break;
-
       case 'missing_bank_signed':
         $signed = TRUE;
-        $this->info('Sending submission @id to Salesforce without signature', ['@id' => $submission->id()]);
+        $this->info('Sending submission @id to Salesforce without bank details', ['@id' => $submission->id()]);
         break;
 
       case 'created_bisnode':
@@ -161,7 +157,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
       $date = new DrupalDateTime();
       $continuation_url = Url::fromRoute('unhcr_form.assently.create_secondary', ['submission' => $submission->id(), 'uuid' => $submission->uuid(),], ['absolute' => TRUE])->toString();
 
-      if ($submission->get('submission_state')->value == 'missing_bank_signed') {
+      if ($submission->get('submission_state')->value === 'missing_bank_signed') {
         $donation_data['data'][] = [
           'attributes' => [
             'sObject' => 'gcdt__Holding__c',
