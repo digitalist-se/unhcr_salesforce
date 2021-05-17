@@ -206,9 +206,9 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
     $ssn = str_replace('-', '', $ssn);
     $date = new DrupalDateTime();
     $company_name = !empty($submission_data['field_company_name']) ? $submission_data['field_company_name'] : '';
-    $shipping_street = $submission_data['street_address'];
+    $street_address = $submission_data['street_address'];
     if (!empty($company_name)) {
-      $shipping_street .= '\r\n' . $company_name;
+      $street_address .= '\r\n' . $company_name;
     }
     /** @var \Drupal\commerce_order\Entity\OrderInterface $order */
     $order = $submission->get('commerce_order')->entity;
@@ -232,14 +232,15 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
             'sObject' => 'Account',
             'referenceId' => 'ACCOUNT',
             'matchRecord' => 'true',
-            'doNotOverride' => 'unig__Partner_Type__c,unig__Partner_Sub_Type__c,unig__Office_Type__c,unig__Income_Team_Manual__c',
+            'doNotOverride' => 'Organisational_Number_S4U__c,unig__Partner_Type__c,unig__Partner_Sub_Type__c,unig__Office_Type__c,unig__Income_Team_Manual__c,unig__Industry_Sector__c,BillingCity,BillingStreet,BillingPostalCode,Corporate_Email_S4U__c',
           ],
           'record' => [
             'Organisational_Number_S4U__c' => $ssn,
             'Name' => !empty($company_name) ? $company_name : $submission_data['first_name'] . ' ' . $submission_data['last_name'],
-            'ShippingCity' => $submission_data['city'],
-            'ShippingStreet' => $shipping_street,
-            'ShippingPostalCode' => str_replace(' ', '', $submission_data['postal_code']),
+            'BillingCity' => $submission_data['city'],
+            'BillingStreet' => $street_address,
+            'BillingPostalCode' => str_replace(' ', '', $submission_data['postal_code']),
+            'Corporate_Email_S4U__c' => $submission_data['email'],
             'unig__Partner_Type__c' => 'Corporate',
             'unig__Partner_Sub_Type__c' => 'SME',
             'unig__Office_Type__c' => 'Headquarters',
@@ -265,47 +266,14 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
 
         $data['data'][] = [
           'attributes' => [
-            'sObject' => 'Contact',
-            'referenceId' => 'CONTACT',
-            'matchRecord' => 'true',
-            'doNotOverride' => "unig__Source_Campaign__c,unig__Source_Type__c",
-          ],
-          'record' => [
-            'npsp__Primary_Affiliation__c' => '@ACCOUNT',
-            'FirstName' => $submission_data['first_name'],
-            'LastName' => $submission_data['last_name'],
-            'Email' => $submission_data['email'],
-            'unig__Source_Type__c' => 'Donation',
-            'unig__Source_Campaign__c' => $submission_data['field_charity_campaign'],
-            'Phone' =>  $landline_number ?? '',
-            'MobilePhone' => $mobile_number ?? '',
-          ],
-        ];
-        // Ensure empty records are not sent to SF to avoid overrides.
-        $not_nullable_fields = [
-          'Personal_ID_S4U__c',
-          'FirstName',
-          'LastName',
-          'Email',
-          'Phone',
-          'MobilePhone',
-          'MailingCity',
-          'MailingStreet',
-          'MailingPostalCode',
-        ];
-        foreach ($not_nullable_fields as $field) {
-          if (isset($data['data'][1]['record'][$field]) && empty($data['data'][1]['record'][$field])) {
-            unset($data['data'][1]['record'][$field]);
-          }
-        }
-
-        $data['data'][] = [
-          'attributes' => [
             'sObject' => 'gcdt__Holding__c',
           ],
           'record' => [
             'gcdt__Account__c' => '@ACCOUNT',
-            'gcdt__Contact__c' => '@CONTACT',
+            'gcdt__First_Name__c' => $submission_data['first_name'],
+            'gcdt__Last_Name__c' => $submission_data['last_name'],
+            'gcdt__Email__c' => $submission_data['email'],
+            'Phone_S4U__c' => $phone_number,
             'gcdt__Payment_Method__c' => $this->getPaymentMethod($submission_data),
             'gcdt__Payment_Reference__c' => $submission_data['transaction_id'],
             'gcdt__Opportunity_Amount__c' => (int) $submission_data['amount'],
@@ -343,7 +311,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
             'LastName' => $submission_data['last_name'],
             'Email' => $submission_data['email'],
             'MailingCity' => $submission_data['city'],
-            'MailingStreet' => $shipping_street,
+            'MailingStreet' => $street_address,
             'MailingPostalCode' => str_replace(' ', '', $submission_data['postal_code']),
             'unig__Source_Type__c' => 'Donation',
             'unig__Source_Campaign__c' => $submission_data['field_charity_campaign'],
@@ -425,9 +393,9 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
       $signed = ($state == 'signed' || $state == 'missing_bank_signed');
     }
     $company_name = !empty($submission_data['field_company_name']) ? $submission_data['field_company_name'] : '';
-    $shipping_street = $submission_data['street_address'];
+    $street_address = $submission_data['street_address'];
     if (!empty($company_name)) {
-      $shipping_street .= '\r\n' . $company_name;
+      $street_address .= '\r\n' . $company_name;
     }
     /** @var \Drupal\commerce_order\Entity\OrderInterface $order */
     $order = $submission->get('commerce_order')->entity;
@@ -454,7 +422,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
         'LastName' => $submission_data['last_name'],
         'Email' => $submission_data['email'],
         'MailingCity' => $submission_data['city'],
-        'MailingStreet' => $shipping_street,
+        'MailingStreet' => $street_address,
         'MailingPostalCode' => str_replace(' ', '', $submission_data['postal_code']),
         'unig__Source_Type__c' => 'Donation',
         'unig__Source_Campaign__c' => $submission_data['field_charity_campaign'] ?? '',
