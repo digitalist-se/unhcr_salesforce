@@ -401,7 +401,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
   }
 
   /**
-   * Prepare one time / memorial / gift donation submission data.
+   * Prepare recurring donation (autogiro) submission data.
    *
    * @param \Drupal\unhcr_form_submissions\Entity\UnhcrFormSubmissionInterface $submission
    *   Submission entity.
@@ -581,21 +581,19 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
    *   Concatenated list of the items included.
    */
   protected function getGiftshopSummary(OrderInterface $order) {
-    $table = [
-      '#type' => 'table',
-      '#header' => [$this->t('Article'), $this->t('Qty'), $this->t('Price')],
+    $items = [
+      implode(' ', [$this->t('Quantity'), $this->t('Article'), $this->t('Price')]),
     ];
-    $rows = [];
-    foreach ($order->getItems() as $item) {
-      $rows[] = [
-        $item->getPurchasedEntity()->getProduct()->label(),
-        (int) $item->getQuantity(),
-        (int) $this->currencyFormatter->format($item->getTotalPrice()->getNumber(), $item->getTotalPrice()->getCurrencyCode()),
-      ];
+    foreach ($order->getItems() as $order_item) {
+      $items[] = implode(' ', [
+        $order_item->getQuantity(),
+        $order_item->getPurchasedEntity()->getProduct()->label(),
+        $this->currencyFormatter->format($order_item->getTotalPrice()->getNumber(), $order_item->getTotalPrice()->getCurrencyCode()),
+      ]);
     }
-    $table['#rows'] = $rows;
+    $items[] = $this->t('Total: ') . $this->currencyFormatter->format($order->getTotalPrice()->getNumber(), $order->getTotalPrice()->getCurrencyCode());
 
-    return $this->renderer->renderPlain($table);
+    return implode('<br/>', $items);
   }
 
   /**
