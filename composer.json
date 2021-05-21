@@ -1,3 +1,4 @@
 {
-    "name": "unhcr/salesforce"
+    "name": "unhcr/salesforce",
+    "type": "drupal-module"
 }
