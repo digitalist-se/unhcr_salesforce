@@ -414,7 +414,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
         'sObject' => 'Contact',
         'referenceId' => 'CONTACT',
         'matchRecord' => 'true',
-        'doNotOverride' => 'unig__Source_Campaign__c',
+        'doNotOverride' => 'unig__Source_Type__c,unig__Source_Campaign__c',
       ],
       'record' => [
         'Personal_ID_S4U__c' => $ssn,
