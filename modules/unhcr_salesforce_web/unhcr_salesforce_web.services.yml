@@ -3,3 +3,7 @@ services:
     class: Drupal\unhcr_salesforce_web\EventSubscriber\SalesforceSubmissionSubscriber
     tags:
       - { name: event_subscriber }
+  unhcr_salesforce_web.create_donation:
+    class: Drupal\unhcr_salesforce_web\EventSubscriber\SalesforceCreateDonation
+    tags:
+      - { name: event_subscriber }
