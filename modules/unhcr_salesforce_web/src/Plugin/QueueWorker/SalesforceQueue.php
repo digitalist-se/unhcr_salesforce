@@ -248,6 +248,18 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
             'unig__Industry_Sector__c' => 'Unknown',
           ],
         ];
+        $data['data'][] = [
+          'attributes' => [
+            'sObject' => 'Contact',
+            'referenceId' => 'CONTACT',
+            'matchRecord' => 'true',
+          ],
+          'record' => [
+            'LastName' => $company_name,
+            'Email' => $submission_data['email'],
+          ],
+        ];
+
         // Ensure empty records are not sent to SF to avoid overrides.
         // @TODO: this should be made generic, however we're at the end of the
         // project and the specs keep changing so leaving it like this for now.
@@ -414,7 +426,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
         'sObject' => 'Contact',
         'referenceId' => 'CONTACT',
         'matchRecord' => 'true',
-        'doNotOverride' => 'unig__Source_Type__c,unig__Source_Campaign__c',
+        'doNotOverride' => 'unig__Source_Campaign__c',
       ],
       'record' => [
         'Personal_ID_S4U__c' => $ssn,
