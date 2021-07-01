@@ -63,9 +63,11 @@ interface SalesforceApiInterface {
    *
    * @param array $data
    *   Array of data.
+   * @param array $metadata
+   *   Array of additional parameters or context sent to the donation.
    *
    * @return mixed
    */
-  public function createDonation(array $data);
+  public function createDonation(array $data, array $metadata);
 
 }

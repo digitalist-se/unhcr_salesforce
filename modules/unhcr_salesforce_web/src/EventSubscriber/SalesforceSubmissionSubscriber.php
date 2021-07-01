@@ -29,6 +29,11 @@ class SalesforceSubmissionSubscriber implements EventSubscriberInterface {
    */
   public function onPostSave(SubmissionEvent $event) {
     $submission = $event->getSubmission();
+    // Skip submissions already processed successfully.
+    if ($submission->hasField('submission_state') && $submission->get('submission_state')->value == 'crm_success') {
+      return;
+    }
+
     $options = $event->getOptions();
     /* @var \Drupal\Core\Queue\QueueInterface $queue */
     // @TODO: Inject dependencies.

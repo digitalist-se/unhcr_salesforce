@@ -197,6 +197,8 @@ class SalesforceApi implements SalesforceApiInterface {
         }
         throw new \Exception('Salesforce error, try this one again later. Marketing Cloud has not been triggered.');
       }
+      // Carry over salesforce request for debugging purposes.
+      $metadata['submission_data']['salesforce_response'] = $response->data;
       // Allow other modules to act after the donation has been created.
       $event = new SubmissionEvent($response, $metadata);
       $this->eventDispatcher->dispatch(SubmissionEvents::CREATE_DONATION, $event);

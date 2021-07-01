@@ -139,7 +139,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
         $this->info('Sending submission @id to Salesforce without bank details', ['@id' => $submission->id()]);
         break;
 
-      case 'created_bisnode':
+      case 'crm_success':
       case 'missing_bank_interest_created':
         $this->warning('Submission @id was already sent to Salesforce, skipping.', ['@id' => $submission->id()]);
         return;
@@ -150,7 +150,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
     }
 
     try {
-      $submission_data = Json::decode($submission->get('submission_data')->value, TRUE);
+      $submission_data = Json::decode($submission->get('submission_data')->value);
       $donation_data = [
         'data' => [],
       ];

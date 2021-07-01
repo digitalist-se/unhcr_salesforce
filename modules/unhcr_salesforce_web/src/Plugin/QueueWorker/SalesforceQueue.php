@@ -161,7 +161,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
     if (!$this->validateSubmissionState($submission)) {
       return;
     }
-    $submission_data = Json::decode($submission->get('submission_data')->value, TRUE);
+    $submission_data = Json::decode($submission->get('submission_data')->value);
 
     // This is the place where decide if send autogiro or one time donation.
     switch ($submission_data['order_type']) {
@@ -181,6 +181,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
       try {
         $this->salesforceClient->createDonation($donation_data, ['type' => $type, 'submission_data' => $submission_data, 'submission' => $submission->id()]);
       } catch (\Exception $e) {
+        watchdog_exception('unchr_salesforce_web', $e, $e->getMessage());
         throw new \Exception('Salesforce error, try this one again later.');
       }
     }
@@ -487,39 +488,24 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
   protected function validateSubmissionState(UnhcrFormSubmissionInterface $submission) {
     switch ($submission->get('submission_state')->value) {
       case 'signed':
-        $this->info(
-          'Sending submission @id to Salesforce',
-          ['@id' => $submission->id()]
-        );
+        $this->info('Sending submission @id to Salesforce', ['@id' => $submission->id()]);
         return TRUE;
 
       case 'missing_bank_interest_queued':
-        $this->info(
-          'Submission @id is being sent to Salesforce without bank details.',
-          ['@id' => $submission->id()]
-        );
+        $this->info('Submission @id is being sent to Salesforce without bank details.', ['@id' => $submission->id()]);
         return TRUE;
 
-      case 'created_bisnode':
+      case 'crm_success':
       case 'missing_bank_interest_created':
-        $this->warning(
-          'Submission @id was already sent to Salesforce, skipping.',
-          ['@id' => $submission->id()]
-        );
+        $this->warning('Submission @id was already sent to Salesforce, skipping.', ['@id' => $submission->id()]);
         return FALSE;
 
       case 'error':
-        if ($submission->get(
-            'error_type'
-          )->value === 'charity_communication_error') {
-          $this->info(
-            'Retrying sending previously errored submission @id top Salesforce.',
-            ['@id' => $submission->id()]
-          );
+        if ($submission->get('error_type')->value === 'charity_communication_error') {
+          $this->info('Retrying sending previously errored submission @id top Salesforce.', ['@id' => $submission->id()]);
           return TRUE;
         }
-        $this->error(
-          'Submission @id is in error state @error_type, will not retry sending it.',
+        $this->error('Submission @id is in error state @error_type, will not retry sending it.',
           [
             '@id' => $submission->id(),
             '@error_type' => $submission->getErrorTypeLabel(),
@@ -528,8 +514,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
         return FALSE;
 
       default:
-        $this->error(
-          'Submission @id is in the wrong state(@state) to be sent to Charity, skipping.',
+        $this->error('Submission @id is in the wrong state(@state) to be sent to CRM, skipping.',
           [
             '@id' => $submission->id(),
             '@state' => $submission->get('submission_state')->value,
