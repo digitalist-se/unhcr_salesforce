@@ -551,9 +551,9 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
     ];
     foreach ($order->getItems() as $order_item) {
       $items[] = implode(' ', [
-        $order_item->getQuantity(),
+        (int) $order_item->getQuantity(),
         $order_item->getPurchasedEntity()->getProduct()->label(),
-        $this->currencyFormatter->format($order_item->getTotalPrice()->getNumber(), $order_item->getTotalPrice()->getCurrencyCode()),
+        $this->currencyFormatter->format($order_item->getTotalPrice()->getNumber(), $order_item->getTotalPrice()->getCurrencyCode(), ['maximum_fraction_digits' => 0]),
       ]);
     }
     $items[] = $this->t('Total: ') . $this->currencyFormatter->format($order->getTotalPrice()->getNumber(), $order->getTotalPrice()->getCurrencyCode());
