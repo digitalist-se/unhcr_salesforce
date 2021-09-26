@@ -3,7 +3,9 @@
 namespace Drupal\unhcr_salesforce_web\EventSubscriber;
 
 use Drupal\Component\Serialization\Json;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use  Drupal\unhcr_salesforce\Event\SubmissionEvent;
+use Drupal\unhcr_salesforce\Event\SubmissionEvents;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
@@ -14,11 +16,20 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 class SalesforceCreateDonation implements EventSubscriberInterface {
 
   /**
+   * @var \Drupal\unhcr_form_submissions\UnhcrFormSubmissionStorageInterface
+   */
+  protected $submissionStorage;
+
+  public function __construct(EntityTypeManagerInterface $entityTypeManager) {
+    $this->submissionStorage = $entityTypeManager->getStorage('unhcr_form_submission');
+  }
+
+  /**
    * {@inheritdoc}
    */
   public static function getSubscribedEvents() {
     return [
-      'unhcr_salesforce.create_donation' => 'onCreateDonation',
+      SubmissionEvents::CREATE_DONATION => 'onCreateDonation',
     ];
   }
 
@@ -30,9 +41,9 @@ class SalesforceCreateDonation implements EventSubscriberInterface {
    */
   public function onCreateDonation(SubmissionEvent $event) {
     $data = $event->getData();
-    /** @var \Drupal\unhcr_form\Entity\UnhcrFormSubmissionInterface $submission */
+    /** @var \Drupal\unhcr_form_submissions\Entity\UnhcrFormSubmissionInterface $submission */
     // @TODO: Inject dependencies.
-    $submission = \Drupal::entityTypeManager()->getStorage('unhcr_form_submission')->load($data['submission']);
+    $submission =  $this->submissionStorage->load($data['submission']);
     if (!empty($submission)) {
       // Include the Salesforce return into the debug information.
       $submission_data = $submission->get('submission_data')->value;
@@ -44,8 +55,7 @@ class SalesforceCreateDonation implements EventSubscriberInterface {
       $submission->save();
 
       // Also update the order to reflect the CRM status.
-      /** @var \Drupal\commerce_order\Entity\OrderInterface $order */
-      $order = $submission->get('commerce_order')->entity;
+      $order = $submission->getOrder();
       if (!empty($order) && $order->hasField('field_remote_sent')) {
         $order->set('field_remote_sent', TRUE);
         $order->save();

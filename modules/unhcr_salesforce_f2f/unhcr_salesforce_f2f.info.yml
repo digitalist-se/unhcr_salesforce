@@ -5,3 +5,4 @@ package: UNHCR - Salesforce
 type: module
 dependencies:
   - unhcr_salesforce:unhcr_salesforce
+  - unhcr_form:unhcr_form

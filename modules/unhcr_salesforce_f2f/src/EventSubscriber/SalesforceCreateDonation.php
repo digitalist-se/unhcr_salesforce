@@ -3,7 +3,9 @@
 namespace Drupal\unhcr_salesforce_f2f\EventSubscriber;
 
 use Drupal\Component\Serialization\Json;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use  Drupal\unhcr_salesforce\Event\SubmissionEvent;
+use Drupal\unhcr_salesforce\Event\SubmissionEvents;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
@@ -14,25 +16,33 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 class SalesforceCreateDonation implements EventSubscriberInterface {
 
   /**
+   * @var \Drupal\unhcr_form\UnhcrFormSubmissionStorageInterface
+   */
+  protected $submissionStorage;
+
+  public function __construct(EntityTypeManagerInterface $entityTypeManager) {
+    $this->submissionStorage = $entityTypeManager->getStorage('unhcr_form_submission');
+  }
+
+  /**
    * {@inheritdoc}
    */
   public static function getSubscribedEvents() {
     return [
-      'unhcr_salesforce.create_donation' => 'onCreateDonation',
+      SubmissionEvents::CREATE_DONATION => 'onCreateDonation',
     ];
   }
 
   /**
    * Processes the submission after a successful return from Salesforce.
    *
-   * @param \Drupal\unhcr_form_submissions\Event\SubmissionEvent $event
+   * @param \Drupal\unhcr_form\Event\SubmissionEvent $event
    *   The event.
    */
   public function onCreateDonation(SubmissionEvent $event) {
     $data = $event->getData();
     /** @var \Drupal\unhcr_form\Entity\UnhcrFormSubmissionInterface $submission */
-    // @TODO: Inject dependencies.
-    $submission = \Drupal::entityTypeManager()->getStorage('unhcr_form')->load($data['submission']);
+    $submission = $this->submissionStorage->load($data['submission']);
     if (!empty($submission)) {
       // Include the Salesforce return into the debug information.
       $submission_data = $submission->get('submission_data')->value;

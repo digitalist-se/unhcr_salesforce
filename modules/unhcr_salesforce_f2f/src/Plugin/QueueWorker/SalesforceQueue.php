@@ -119,7 +119,7 @@ class SalesforceQueue extends QueueWorkerBase implements ContainerFactoryPluginI
    * {@inheritdoc}
    */
   public function processItem($data) {
-    /* @var \Drupal\unhcr_form_submissions\Entity\UnhcrFormSubmissionInterface $submission */
+    /* @var \Drupal\unhcr_form\Entity\UnhcrFormSubmissionInterface $submission */
     $submission = $this->entityTypeManager->getStorage('unhcr_form_submission')->load($data);
     if (!$submission) {
       $this->warning('Failed to find a submission when trying to create a Salesforce Autogiro. Submission id was @id, dropped it from the queue.', ['@id' => $data]);

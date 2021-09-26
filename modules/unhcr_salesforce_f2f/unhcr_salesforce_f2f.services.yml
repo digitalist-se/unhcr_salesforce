@@ -1,9 +1,11 @@
 services:
   unhcr_salesforce_f2f.submission_subscriber:
     class: Drupal\unhcr_salesforce_f2f\EventSubscriber\SalesforceSubmissionSubscriber
+    arguments: ['@queue']
     tags:
       - { name: event_subscriber }
   unhcr_salesforce_f2f.create_donation:
     class: Drupal\unhcr_salesforce_f2f\EventSubscriber\SalesforceCreateDonation
+    arguments: ['@entity_type.manager']
     tags:
       - { name: event_subscriber }

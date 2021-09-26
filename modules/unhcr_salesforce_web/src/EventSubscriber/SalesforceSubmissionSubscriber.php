@@ -2,7 +2,9 @@
 
 namespace Drupal\unhcr_salesforce_web\EventSubscriber;
 
+use Drupal\Core\Queue\QueueFactory;
 use Drupal\unhcr_form_submissions\Event\SubmissionEvent;
+use Drupal\unhcr_form_submissions\Event\SubmissionEvents;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
@@ -13,11 +15,20 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 class SalesforceSubmissionSubscriber implements EventSubscriberInterface {
 
   /**
+   * @var \Drupal\Core\Queue\QueueFactory
+   */
+  protected $queueFactory;
+
+  public function __construct(QueueFactory $queueFactory ) {
+    $this->queueFactory = $queueFactory;
+  }
+
+  /**
    * {@inheritdoc}
    */
   public static function getSubscribedEvents() {
     return [
-      'unhcr_form_submissions.post_save' => 'onPostSave',
+      SubmissionEvents::POST_SAVE => 'onPostSave',
     ];
   }
 
@@ -30,14 +41,12 @@ class SalesforceSubmissionSubscriber implements EventSubscriberInterface {
   public function onPostSave(SubmissionEvent $event) {
     $submission = $event->getSubmission();
     // Skip submissions already processed successfully.
-    if ($submission->hasField('submission_state') && $submission->get('submission_state')->value == 'crm_success') {
+    if ($submission->hasField('submission_state') && $submission->get('submission_state')->value === 'crm_success') {
       return;
     }
 
     $options = $event->getOptions();
-    /* @var \Drupal\Core\Queue\QueueInterface $queue */
-    // @TODO: Inject dependencies.
-    $queue = \Drupal::service('queue')->get('salesforce_queue');
+    $queue = $this->queueFactory->get('salesforce_queue');
     $create_submission = FALSE;
 
     // Monthly subscriptions go through Assently.
@@ -45,18 +54,17 @@ class SalesforceSubmissionSubscriber implements EventSubscriberInterface {
       // For monthly subscriptions / Assently , the queues are populated on
       // submission update.
       if ($options['update'] === TRUE) {
-        /** @var \Drupal\commerce_order\Entity\OrderInterface $order */
-        $order = $submission->get('commerce_order')->entity;
+        $order = $submission->getOrder();
         // Signing on paper doesn't have much on it, submission needs to be
         // pushed to Salesforce.
-        if ($order->getData('subscription_payment_type') == 'paper') {
+        if ($order && $order->getData('subscription_payment_type') === 'paper') {
           $create_submission = TRUE;
         }
         elseif ($submission->hasField('submission_state') && !$submission->get('submission_state')->isEmpty()) {
           // In case the user has signed in Assently, with or without bank
           // details, the submission is processed.
           $state = $submission->get('submission_state')->value;
-          if ($state == 'signed' || $state == 'missing_bank_signed') {
+          if ($state === 'signed' || $state === 'missing_bank_signed') {
             $create_submission = TRUE;
           }
         }
