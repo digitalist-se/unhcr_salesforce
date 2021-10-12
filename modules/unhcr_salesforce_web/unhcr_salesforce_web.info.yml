@@ -1,6 +1,6 @@
 name: UNHCR Salesforce (Web)
 description: Provides customizations for the the UNHCR web. Should only be installed on the main site.
-core: 8.x
+core_version_requirement: ^8 || ^9
 package: UNHCR - Salesforce
 type: module
 dependencies:
