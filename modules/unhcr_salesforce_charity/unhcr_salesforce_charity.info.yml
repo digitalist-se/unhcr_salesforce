@@ -1,8 +1,0 @@
-name: UNHCR Salesforce - Charity integration
-description: Provides a layer to override the Charity features by Salesforce before deprecating them.
-core_version_requirement: ^8 || ^9
-package: UNHCR - Salesforce
-type: module
-dependencies:
-  - bisnodecharity:bisnodecharity
-  - unhcr_salesforce:unhcr_salesforce

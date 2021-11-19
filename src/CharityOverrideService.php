@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\unhcr_salesforce_charity;
+namespace Drupal\unhcr_salesforce;
 
 use Drupal\bisnodecharity\CharityService;
 use Drupal\bisnodecharity\Exception\ServerException;
@@ -8,7 +8,7 @@ use Drupal\bisnodecharity\Exception\ServerException;
 /**
  * Class CharityOverrideService.
  *
- * @package unhcr_salesforce_charity
+ * @package unhcr_salesforce
  */
 class CharityOverrideService extends CharityService {
 
