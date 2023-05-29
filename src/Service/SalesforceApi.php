@@ -187,6 +187,49 @@ class SalesforceApi implements SalesforceApiInterface {
   /**
    * {@inheritdoc}
    */
+  public function getTributes() {
+    try {
+      $soql_query = new SelectQuery('Tribute_Collection__c');
+      $soql_query->fields = [
+        'Id',
+        'Address_City__c',
+        'Address_Postal_Zip__c',
+        'Address_Street__c',
+        'Formal_Name_Of_Honoree__c',
+        'Notification_Date__c',
+        'Location_Name__c',
+      ];
+      $soql_query->addCondition('Active__c', 'TRUE');
+      return $this->sfapi->query($soql_query)->records();
+    }
+    catch (Exception $e) {
+      watchdog_exception('unhcr_salesforce', $e);
+    }
+
+    return [];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getEarmarks() {
+    try {
+      $soql_query = new SelectQuery('Campaign');
+      $soql_query->fields = ['Id', 'Name', 'Display_Friendly_Name__c'];
+      $soql_query->addCondition('IsActive', 'TRUE');
+      $soql_query->addCondition('Display_as_Honoree_Campaign__c', 'TRUE');
+      return $this->sfapi->query($soql_query)->records();
+    }
+    catch (Exception $e) {
+      watchdog_exception('unhcr_salesforce', $e);
+    }
+
+    return [];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function createDonation(array $data, array $metadata = []) {
     try {
       $response = $this->sfapi->apiCall('/services/apexrest/gcis/v1/data', $data, 'PUT', TRUE);

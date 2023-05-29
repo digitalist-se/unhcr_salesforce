@@ -59,6 +59,22 @@ interface SalesforceApiInterface {
   public function getContactBySSN($ssn);
 
   /**
+   * Returns tributes.
+   *
+   * @return \Drupal\salesforce\SObject[]
+   *   Array of Salesforce object.
+   */
+  public function getTributes();
+
+  /**
+   * Returns earmarks.
+   *
+   * @return \Drupal\salesforce\SObject[]
+   *   Array of Salesforce object.
+   */
+  public function getEarmarks();
+
+  /**
    * Create a donation in Salesforce.
    *
    * @param array $data
