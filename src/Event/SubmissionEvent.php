@@ -2,7 +2,7 @@
 
 namespace Drupal\unhcr_salesforce\Event;
 
-use Symfony\Component\EventDispatcher\Event;
+use Drupal\Component\EventDispatcher\Event;
 use Drupal\salesforce\Rest\RestResponse;
 
 /**

@@ -51,11 +51,11 @@ class SalesforceApi implements SalesforceApiInterface {
   protected $eventDispatcher;
 
   /**
-   * The logger factory.
+   * The logger.
    *
-   * @var \Drupal\Core\Logger\LoggerChannelFactoryInterface
+   * @var \Drupal\Core\Logger\LoggerChannelInterface
    */
-  protected $loggerFactory;
+  protected $logger;
 
   /**
    * Constructs a SalesforceApi object.
@@ -76,7 +76,7 @@ class SalesforceApi implements SalesforceApiInterface {
     $this->configFactory = $configFactory;
     $this->entityTypeManager = $entityTypeManager;
     $this->eventDispatcher = $eventDispatcher;
-    $this->loggerFactory = $loggerFactory;
+    $this->logger = $loggerFactory->get('unhcr_salesforce');
   }
 
   /**
@@ -97,7 +97,7 @@ class SalesforceApi implements SalesforceApiInterface {
       return current($records);
     }
     catch (Exception $e) {
-      watchdog_exception('unhcr_salesforce', $e);
+      $this->logger->error('Error getting campaign: @message', ['@message' => $e->getMessage()]);
     }
 
     return FALSE;
@@ -119,7 +119,7 @@ class SalesforceApi implements SalesforceApiInterface {
       return $this->sfapi->query($soql_query)->records();
     }
     catch (Exception $e) {
-      watchdog_exception('unhcr_salesforce', $e);
+      $this->logger->error('Error getting campaigns: @message', ['@message' => $e->getMessage()]);
     }
 
     return [];
@@ -147,7 +147,7 @@ class SalesforceApi implements SalesforceApiInterface {
       return $this->sfapi->query($soql_query)->records();
     }
     catch (Exception $e) {
-      watchdog_exception('unhcr_salesforce', $e);
+      $this->logger->error('Error getting recruiters: @message', ['@message' => $e->getMessage()]);
     }
 
     return [];
@@ -178,7 +178,7 @@ class SalesforceApi implements SalesforceApiInterface {
       return reset($contacts);
     }
     catch (Exception $e) {
-      watchdog_exception('unhcr_salesforce', $e);
+      $this->logger->error('Error getting contact by SSN: @message', ['@message' => $e->getMessage()]);
     }
 
     return [];
@@ -203,7 +203,7 @@ class SalesforceApi implements SalesforceApiInterface {
       return $this->sfapi->query($soql_query)->records();
     }
     catch (Exception $e) {
-      watchdog_exception('unhcr_salesforce', $e);
+      $this->logger->error('Error getting tributes: @message', ['@message' => $e->getMessage()]);
     }
 
     return [];
@@ -221,7 +221,7 @@ class SalesforceApi implements SalesforceApiInterface {
       return $this->sfapi->query($soql_query)->records();
     }
     catch (Exception $e) {
-      watchdog_exception('unhcr_salesforce', $e);
+      $this->logger->error('Error getting earmarks: @message', ['@message' => $e->getMessage()]);
     }
 
     return [];
@@ -248,7 +248,7 @@ class SalesforceApi implements SalesforceApiInterface {
       return $response;
     }
     catch (Exception $e) {
-      watchdog_exception('unhcr_salesforce', $e);
+      $this->logger->error('Error creating donation: @message', ['@message' => $e->getMessage()]);
     }
 
     return [];
@@ -258,7 +258,7 @@ class SalesforceApi implements SalesforceApiInterface {
    * {@inheritdoc}
    */
   public function log($level, $message, array $context = []) {
-    $this->loggerFactory->get('unhcr_salesforce')->log($level, $message, $context);
+    $this->logger->log($level, $message, $context);
   }
 
 }

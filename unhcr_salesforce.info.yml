@@ -1,6 +1,6 @@
 name: UNHCR Salesforce
 description: Provides integration for Salesforce and Give Clarity.
-core_version_requirement: ^8 || ^9
+core_version_requirement: ^8 || ^9 || ^10
 package: UNHCR - Salesforce
 type: module
 dependencies:

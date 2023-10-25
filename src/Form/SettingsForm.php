@@ -6,6 +6,7 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\unhcr_salesforce\Service\SalesforceApiInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -21,6 +22,14 @@ class SettingsForm extends ConfigFormBase {
   protected $salesforceClient;
 
   /**
+   * The logger.
+   *
+   * @var \Drupal\Core\logger\LoggerChannelInterface
+   */
+  protected $logger;
+
+
+  /**
    * Constructs SettingsForm object.
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
@@ -28,8 +37,9 @@ class SettingsForm extends ConfigFormBase {
    * @param \Drupal\unhcr_salesforce\Service\SalesforceApiInterface $salesforce_client
    *   The Salesforce service.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, SalesforceApiInterface $salesforce_client) {
+  public function __construct(ConfigFactoryInterface $config_factory, SalesforceApiInterface $salesforce_client, LoggerInterface $logger) {
     $this->salesforceClient = $salesforce_client;
+    $this->logger = $logger;
     parent::__construct($config_factory);
   }
 
@@ -39,7 +49,8 @@ class SettingsForm extends ConfigFormBase {
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('config.factory'),
-      $container->get('unhcr_salesforce.client')
+      $container->get('unhcr_salesforce.client'),
+      $container->get('logger.factory')->get('unhcr_salesforce')
     );
   }
 
@@ -75,7 +86,7 @@ class SettingsForm extends ConfigFormBase {
       ];
     }
     catch (\Exception $e) {
-      watchdog_exception('unhcr_salesforce', $e);
+      $this->logger->error('Error building form: @message', ['@message' => $e->getMessage()]);
     }
 
     return parent::buildForm($form, $form_state);
