@@ -244,7 +244,7 @@ class SalesforceApi implements SalesforceApiInterface {
       $metadata['submission_data']['salesforce_response'] = $response->data;
       // Allow other modules to act after the donation has been created.
       $event = new SubmissionEvent($response, $metadata);
-      $this->eventDispatcher->dispatch(SubmissionEvents::CREATE_DONATION, $event);
+      $this->eventDispatcher->dispatch($event, SubmissionEvents::CREATE_DONATION);
       return $response;
     }
     catch (Exception $e) {
